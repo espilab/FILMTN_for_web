@@ -1,8 +1,5 @@
 #!/usr/local/bin/python3
-#!/usr/bin/python
-#!/usr/local/bin/python3
-#!/usr/bin/python
-#!/home/sakamoto-tt/local/python/bin/python3
+
 
 import urllib.request
 import os
