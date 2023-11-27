@@ -1,0 +1,612 @@
+<!-- 
+  FILMTN_aj.html  
+-->
+<meta charset=utf-8>
+<html>
+ <head>
+    <link rel="stylesheet" href="filmtn.css">
+</head>
+
+<!-- <script src="./src/ace.js"></script>
+<! -- -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ext-language_tools.js"></script>
+<script>
+
+// global var.
+var DEBUG = false;
+var NAME_VERSION = "FILTMN_web ver 0.24";
+var CGI_FNAME = "./py_cmd.cgi";
+
+// setting of ace editor 
+var editor;
+
+// dir listing order mode
+var list_dir_sort_kind = '';
+var list_dir_sort_order = '';
+
+
+function init1(){
+    debug_println('init ok');
+    editor = ace.edit("edit_area_ace");
+    editor.getSession().setMode("ace/mode/html");
+    editor.setTheme("ace/theme/monokai");
+    editor.setFontSize(16);
+    //editor.setOption("charset","utf8");
+
+    let uriUp = location.href.toUpperCase();
+    if (uriUp.indexOf("DEBUG") > 0){
+        debug_println("DEBUG on");
+        DEBUG = true;
+    }
+    if (DEBUG) document.getElementById("debug_tool").style.display = 'block';
+    else       document.getElementById("debug_tool").style.display = 'none';      
+    
+    // if filename includes 'bk', change background color pink. (as maintenance page)
+    let myfname = window.location.href.split('/').pop();
+    if (myfname.indexOf("bk") > 0){
+      document.getElementById("filmtn_body").style.backgroundColor = "#FCE8FC";
+    }
+
+    document.getElementById('cur_path').value = './';
+    document.getElementById('name_version').innerText = NAME_VERSION;
+    document.title = NAME_VERSION;
+
+    document.getElementById('edit_area').style.display = 'none';
+    document.getElementById('edit_area_ace').style.display = 'none';
+    list_directory('','');
+}
+
+
+// access the web page with cgi, and get content of it
+function py_req(cmd_kind, param1, param2){
+  debug_println('cmd_kind=' + cmd_kind); //DEBUG
+  //param1 = document.getElementById("param1").value;
+  debug_println('param1='+param1);
+  if (param2.length < 5000){ debug_println('param2='+param2); } else {debug_println('(param2 very long)');}
+  var req = new XMLHttpRequest();
+
+  // called when status change
+  req.onreadystatechange = function() {
+    if (req.readyState == 4) { // complete
+      if (req.status == 200) { // success communication
+        show_status('Done');
+        process_received_content(req.responseText);    // process received content
+      } else {
+        show_status('? status='+req.status);
+      }
+    } else {
+      show_status('wait...');
+    }
+  }
+  //req.open('GET', './py_cmd.cgi?cmd=' + cmd_kind + '&param1=' + param1, true);
+  req.open('POST', CGI_FNAME, true);
+  req.setRequestHeader('content-type',  'application/x-www-form-urlencoded;charset=UTF-8');
+
+  // POSTの場合、sendで送る
+  var params = 'cmd=' + cmd_kind + '&param1=' + param1 + '&param2=' + param2;
+  //console.log(params)  //DEBUG
+  req.send(params);
+}
+
+// process the received content from cgi-script
+function process_received_content(content){
+  //clear_debug_button();
+  if (DEBUG) debug_println(content + "///;length="+content.length);    //DEBUG
+  if (DEBUG) debug_println("last char=#"+content[content.length - 1]+"#");  //DEBUG
+
+  let all_lines = [];
+  if (DEBUG)  debug_println("current content="+content+"//END"); //DEBUG
+  all_lines = content.split("\n");
+  if (DEBUG){
+    for (j = 0; j < (all_lines.length); j++){ debug_println('['+j+']='+all_lines[j]);}  //DEBUG 
+    debug_println('all_lines, separated len='+all_lines.length); //DEBUG
+  }
+  ar = all_lines[0].split("=");
+  if (all_lines[1].includes('Error')){
+    alert('Error occured! (' + ar[1] +')');
+    return;
+  }
+  if (ar[1] == 'dir'){  
+    show_dir(all_lines); 
+  }
+  let cmds = ['del_file', 'rm_dir', 'make_dir', 'cre_file', 'save_text_file', 'copy_to', 'move_to', 'chmod_file'];
+  if (cmds.includes(ar[1])){
+    list_directory('','');
+  }
+  if (ar[1] == 'save_bin_file'){
+    clear_upload_info();
+    list_directory('','');
+  } 
+  if (ar[1] == 'get_file'){
+    let fname = all_lines[1];  // file name in 2nd line
+    let cnt = 0;
+    for (p=0; p<content.length; p++){
+      if (content.codePointAt(p) == 0x0a){ cnt++;}
+      if (cnt >= 2){
+        text_content = content.slice(p + 1);
+        break;
+      }
+    }
+    //debug_println('### all_lines.length='+all_lines.length); //DEBUG
+    //debug_println('[2]='+all_lines[2]); //DEBUG
+    //debug_println('[3]='+all_lines[3]); //DEBUG
+    //debug_println('[4]='+all_lines[4]); //DEBUG
+    //for (j = 2; j < (all_lines.length - 1); j++){ 
+    //  text_content += (all_lines[j] + "\n"); 
+    ///}  
+    if (DEBUG) debug_println('The response includes get_file result, text_content=('+text_content+")///");
+    open_edit_area_ace(fname, text_content); 
+  }
+}
+
+
+
+// show dir
+function show_dir(dir_list){
+  let table_str = '<table border="1">';
+  
+  table_str += '<tr>';
+  table_str += '<th> name <a href="#" onclick=list_directory("name","up")> ↑ </a> <a href="#" onclick=list_directory("name","down")> ↓ </a></th>';
+  table_str += '<th> size <a href="#" onclick=list_directory("size","up")> ↑ </a> <a href="#" onclick=list_directory("size","down")> ↓ </a></th>';
+  table_str += '<th> date <a href="#" onclick=list_directory("date","up")> ↑ </a> <a href="#" onclick=list_directory("date","down")> ↓ </a></th>';
+  table_str += '<td>-</td>';
+  table_str += '</tr>';
+  for (j = 1; j < dir_list.length - 1; j++){
+    [fname, size_str, mtime_str, permissions, file_path, is_dir, is_file] = dir_list[j].split(",");
+    a_row_str = '<tr>';
+    if (is_file == 'True'){ a_row_str += '<td><a href="' + file_path + '">' + fname + '</a></td>'; }
+    else if (is_dir == 'True'){  a_row_str += '<td><a href="#" onclick=change_directory("' + fname + '/")>' + fname + '</a></td>'; }
+    else {  a_row_str += '<td>' + fname + '</td>';  }
+    a_row_str += '<td>' + size_str + '</td>';
+    a_row_str += '<td>' + mtime_str + '</td>';
+    a_row_str += '<td>' + int2rwx(permissions) + '</td>';
+    if (is_file == 'True'){ a_row_str += '<td> <a href="#" onclick=copy_to_file("' + file_path + '")>copy<a>' + '</td>';}
+    else { a_row_str += '<td> - </td>'; }
+    if (is_file == 'True'){ a_row_str += '<td><a href="#" onclick=edit_file("' + file_path + '")>edit<a>' + '</td>';  }
+      else { a_row_str += '<td> - </td>'; }    
+    if (is_file == 'True'){a_row_str += '<td><a href="#" onclick=delete_file("' + file_path + '")>delete<a>' + '</td>'; }   
+    else if (is_dir == 'True'){ a_row_str += '<td><a href="#" onclick=rm_dir("' + file_path + '")>rmdir<a>' + '</td>'; }
+    else {a_row_str += '<td>-</td>'; }   
+    a_row_str += '<td><a href="#" onclick=move_file("' + file_path + '")> move <a>' + '</td>';  
+    a_row_str += '<td><a href="#" onclick=chmod_file("' + file_path + '")>chmod<a>' + '</td>';    
+    a_row_str += '<td><a href="' + file_path + '" download="' + fname + '">DL </A></td>';    
+    //a_row_str += '<td>path=' + file_path + '</td>';
+    //a_row_str += '<td>is_dir=' + is_dir + '</td>';
+    a_row_str += '</tr>\n';
+    
+    table_str += a_row_str;
+  }
+  table_str += '</table>';
+  if (DEBUG) debug_println(table_str);
+  document.getElementById('div_no1').innerHTML = table_str;
+
+}
+
+
+
+function list_directory(kind,order){
+    cur_path = document.getElementById('cur_path').value;
+    if (kind != ''){   list_dir_sort_kind = kind;  }
+    if (order != ''){  list_dir_sort_order = order;  }
+    debug_println('dir '+cur_path+' '+kind + '=' + order);
+    py_req('dir', cur_path, list_dir_sort_kind + '=' + list_dir_sort_order);
+    //py_req('dir', '', kind+'='+order);
+}
+
+
+function list_directory_button(){
+  list_directory(list_dir_sort_kind, list_dir_sort_order);
+}
+
+function int2rwx(permissions_int){
+  let str = '';
+  let p = permissions_int;
+  str += p & 0x100 ? 'r' : '-';
+  str += p & 0x080 ? 'w' : '-';
+  str += p & 0x040 ? 'x' : '-';
+  str += p & 0x020 ? 'r' : '-';
+  str += p & 0x010 ? 'w' : '-';
+  str += p & 0x008 ? 'x' : '-';
+  str += p & 0x004 ? 'r' : '-';
+  str += p & 0x002 ? 'w' : '-';
+  str += p & 0x001 ? 'x' : '-';
+  return str;
+}
+
+function copy_to_file(from_fname){
+  debug_print('copy_to pressed, from_fname=' + from_fname);
+  to_fname = window.prompt("Enter New filename; copy to:", "");
+  to_fname = document.getElementById('cur_path').value + to_fname;
+  py_req('copy_to', from_fname + ',' + to_fname, '');
+  
+  //py_req('dir','');
+}
+
+
+function delete_file(fname){
+  result = confirm("Delete: " + fname + " ?");
+  if (result){
+    py_req('del_file', fname, '');
+  }
+}
+
+function rm_dir(fname){
+  result = confirm("Remove dir: " + fname + " ?");
+  if (result){
+    py_req('rm_dir', fname, '');
+  }
+}
+
+
+function chmod_file(fname){
+  mode = window.prompt("chmod, enter mode ('755' style) :", "");
+  py_req('chmod_file', fname + ',' + mode, '');
+}
+
+
+function move_file(from_fname){
+  to_fname = window.prompt("Enter to file/dir name; move to:", "");
+  to_fname = document.getElementById('cur_path').value + to_fname;
+  py_req('move_to', from_fname + ',' + to_fname, '');
+}
+
+
+
+
+function edit_file(fname){
+  py_req('get_file', fname, '');
+}
+
+
+// show text editor area  
+function open_edit_area(fname, content){
+  let str = '';
+  //str += '<textarea id="edit_area" cols="100" rows="10">';
+  str += content;
+  //str += '</textarea>';
+  //str += '<hr>';
+  //str += content;  //DEBUG
+  str_op = '<input type="text" id="fname" value="' + fname + '"> ';
+  //str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_file()">';
+  str_op += '<input type="button" name="button_save" value="Close" onclick="close_editor()">';
+  str_op += '_';
+  str_op += '<input type="button" name="button_switch" value="to Ace editor" onclick="switch_editor(2)">';
+  document.getElementById('edit_area').style.display = 'block';
+  document.getElementById('edit_area').value = str;
+  document.getElementById('edit_area_op').innerHTML = str_op;
+}
+
+
+// show text editor area  
+function open_edit_area_ace(fname, content){
+  let str_op = '';
+  str_op += '<input type="text" id="fname" value="' + fname + '"> ';
+  str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_text_file()">';
+  str_op += '<input type="button" name="button_close" value="Close" onclick="close_editor()">';
+  str_op += '_';
+  str_op +=  '<input type="text" id="ace_jmpnum" value="" size="5" ><input type="button" name="button_jmp" value="Jump#" onclick="ace_jump()">';
+  str_op += ' ____ ';
+  str_op += '<input type="button" name="button_begin" value="Select Begin" onclick="ace_sel_begin()">';
+  str_op += '<input type="button" name="button_end"   value="Select End" onclick="ace_sel_end()">';
+  str_op += '<input type="button" name="button_cut"   value="_ Cut _"  onclick="ace_sel_cut()">';
+  str_op += '<input type="button" name="button_copy"  value="_ Copy _" onclick="ace_sel_copy()">';
+  str_op += '<input type="button" name="button_paste" value="_ Paste _" onclick="ace_sel_paste()">';
+  str_op += '_';
+  str_op += '<input type="button" name="button_switch" value="to TEXTAREA" onclick="switch_editor(1)">';
+  str_op += '_';
+  str_op += '<select id="select_lang" onchange="ace_select_lang()">';
+  str_op += '  <option value="HTML">HTML</option>';
+  str_op += '  <option value="Javascript">Javascript</option>';
+  str_op += '  <option value="CSS">CSS</option>';
+  str_op += '  <option value="Python">Python</option>';
+  document.getElementById('edit_area_op').innerHTML = str_op;
+
+  editor.setValue(content); 
+  //editor.resize(true);
+  editor.scrollToLine(1, true, true, function () {});
+  editor.gotoLine(1, 1, true);
+  document.getElementById('edit_area_ace').style.display = 'block';
+  //document.getElementById('edit_area_ace').scrollIntoView();
+  // jump to it, with smooth scroll
+  const element = document.getElementById('edit_area_ace');
+  const rect = element.getBoundingClientRect();
+  window.scrollTo({
+        top: rect.top + window.pageYOffset,
+        behavior: "smooth"
+    });
+}
+
+function ace_select_lang(){
+  let sel = document.getElementById('select_lang').value;
+  if (DEBUG){ debug_println('selected:' + sel);}
+  if (sel == 'HTML'      ){  editor.getSession().setMode("ace/mode/html");   }
+  if (sel == 'Javascript'){  editor.getSession().setMode("ace/mode/javascript");   }
+  if (sel == 'Python'    ){  editor.getSession().setMode("ace/mode/python");   }
+  if (sel == 'CSS'       ){  editor.getSession().setMode("ace/mode/css");   }
+
+}
+
+
+
+function switch_editor(flag){
+  if (flag == 1){
+    fname = document.getElementById('fname').value;
+    content = editor.getValue();
+    document.getElementById('edit_area_ace').style.display = 'none';
+    open_edit_area(fname, content);
+  } else 
+  if (flag == 2){
+    fname = document.getElementById('fname').value;
+    content = document.getElementById('edit_area').value;
+    document.getElementById('edit_area').style.display = 'none';
+    open_edit_area_ace(fname, content);
+  }
+}
+
+
+
+
+// save the edited text file 
+function save_text_file(){
+  fname = document.getElementById('fname').value;
+  debug_print('save, fname='+fname); //DEBUG
+  content = editor.getValue();
+  if (DEBUG) dump_hex(content); //DEBUG
+  content_enc = encodeURIComponent(content);
+  //content_enc = btoa(content);
+  if (DEBUG) debug_print('content=' + content);
+  py_req('save_text_file', fname, content_enc);
+
+  //document.getElementById('edit_area').value = '';
+  //document.getElementById('edit_area').style.display = 'none';
+}
+
+// close ace editor area
+function close_editor(){
+  document.getElementById('edit_area_ace').style.display = 'none';
+  document.getElementById('edit_area_op').innerHTML = '';
+  document.getElementById('edit_area').style.display = 'none';
+}
+
+// ace editor; jump to line#
+function ace_jump(){
+  linenum = document.getElementById('ace_jmpnum').value;
+  editor.scrollToLine(linenum, true, true, function () {});
+  editor.gotoLine(linenum, 1, true);
+}
+
+
+// ace editor; select begin
+function ace_sel_begin(){
+  var cursor = editor.getCursorPosition();
+  ace_cur_row = cursor.row + 1;
+  ace_cur_col = cursor.colmn ;
+  editor.selection.selectTo(ace_cur_row, ace_cur_col);
+}
+// ace editor; select end
+function ace_sel_end(){
+
+}
+// ace editor; select cut
+function ace_sel_cut(){
+  // 選択されたテキストを取得
+  var selectedText = editor.session.getTextRange(editor.getSelectionRange());
+
+  // テキストをクリップボードにコピー
+  navigator.clipboard.writeText(selectedText).then(function() {
+    //console.log('Copying to clipboard was successful!');
+    debug_println('(ACE)Copying to clipboard was successful!');
+    // 選択範囲を削除
+    editor.session.remove(editor.getSelectionRange());
+  }, function(err) {
+    console.error('Could not copy text: ', err);
+  });
+
+}
+
+// ace editor; select copy
+function ace_sel_copy(){
+  // 選択されたテキストを取得
+  var selectedText = editor.session.getTextRange(editor.getSelectionRange());
+
+  // テキストをクリップボードにコピー
+  navigator.clipboard.writeText(selectedText).then(function() {
+    //console.log('Copying to clipboard was successful!');
+    debug_println('(ACE)Copying to clipboard was successful!');
+  }, function(err) {
+    console.error('Could not copy text: ', err);
+  });
+
+}
+// ace editor; select paste
+function ace_sel_paste(){
+    // テキストをクリップボードから取得
+    navigator.clipboard.readText().then(function(clipText) {
+        //console.log('Pasting from clipboard was successful!');
+        
+        // テキストを現在のカーソル位置に挿入
+        editor.session.insert(editor.getCursorPosition(), clipText);
+    }, function(err) {
+        console.error('Could not paste text: ', err);
+    });
+
+}
+
+
+function change_directory(path){
+  document.getElementById('cur_path').value += path;
+  cur_path = document.getElementById('cur_path').value;
+  debug_println('chdir '+cur_path)
+  py_req('dir', cur_path, '','');
+
+}
+
+function chdir_upper(){
+  cur_path = document.getElementById('cur_path').value;
+  cur_path = getParentDirectory(cur_path);
+  document.getElementById('cur_path').value = cur_path;
+  debug_println('chdir (upper) '+ cur_path)
+  py_req('dir', cur_path, '','');
+}
+
+function getParentDirectory(path) {
+    // パスの最後が'/'で終わっている場合、それを取り除く
+    if (path.endsWith('/')) {
+        path = path.slice(0, -1);
+    }
+    // パスを'/'で分割し、最後の要素（現在のディレクトリ）を取り除く
+    var pathArray = path.split('/');
+    pathArray.pop();
+    // パスを再構築する
+    var parentPath = pathArray.join('/');
+    // パスが空になった場合（つまり、元のパスがルートだった場合）、'/'を返す
+    if (parentPath === '') {
+        return '/';
+    } else {
+        return parentPath + '/';
+    }
+}
+
+
+function button_1(){
+    debug_println('dir');
+    py_req('dir','', '');
+}
+
+// make a new file
+function button_newfile(){
+    new_fname = window.prompt("Enter New filename:", "");
+    cur_path = document.getElementById('cur_path').value;
+    py_req('cre_file', cur_path + new_fname, '');
+}
+
+// make a new directory
+function button_mkdir(){
+    new_dir = window.prompt("Enter New directory:", "");
+    cur_path = document.getElementById('cur_path').value;
+    new_dir_path = cur_path + new_dir;
+    py_req('make_dir', new_dir_path, '');
+}
+
+// execute os shell command
+function button_exec_cmd(){
+    let cmd_line = window.prompt("(CAUTION: use carefully)\nEnter os command:", "");
+    if (cmd_line.length > 2){
+      py_req('exec_cmd', cmd_line, '');
+    }
+}
+
+
+
+// file upload -> read-in and save   (バイナリーファイル)
+function file_readin(){
+    var in_file = document.getElementById('input_file_upload').files[0];
+    cur_path = document.getElementById('cur_path').value;
+
+    if (in_file){
+      var fname = cur_path + in_file.name;
+      var reader = new FileReader();
+      reader.onload = function(e){
+        content = e.target.result;
+        if (content.length < 2000){
+          debug_println("content=" + content); //DEBUG
+          debug_println('content dump=');
+          dump_hex(content);  debug_println('(dump end)');
+        } else {
+          debug_println('(big content, skip dumping)');
+        }
+        //content_enc = encodeURIComponent(content);
+        //content_enc = btoa(content);
+        content_enc = encodeURIComponent(btoa(content));
+        //debug_println('content_enc=' + content_enc); //DEBUG
+        py_req('save_bin_file', fname, content_enc);
+      };
+      //reader.readAsText(in_file);
+      reader.readAsBinaryString(in_file);
+      ////reader.readAsArrayBuffer(in_file);
+    } else {
+      document.getElementById('output_area').value = 'No filee selected.';
+      alert('No filee selected.');
+    }
+}
+
+function clear_upload_info(){
+  document.getElementById("input_file_upload").value = '';
+}
+
+
+
+// ----- debug supporting; hex dump
+function dump_hex(content){
+  var dump_str = '';
+  for (j=0; j<content.length; j++){
+    dump_str +=(('0'+(content.charCodeAt(j)).toString(16)).slice(-2)+" ");
+    if (((j+1) & 0x0F) == 0){ dump_str += "\n"; }
+  }
+  document.getElementById('debug_out').textContent += dump_str;
+}
+
+
+// ----- debug print
+function debug_println(str){    debug_print(str + "\n");  }
+
+function debug_print(str){
+  document.getElementById("debug_out").textContent += str; 
+  //document.getElementById('error_msg').innerHTML = str; //DEBUG
+}
+
+function clear_debug_button(){
+  document.getElementById("debug_out").textContent = '';
+}
+
+function show_status(str){
+    document.getElementById('status_win').value = str;
+  }
+
+
+</script>
+
+<!------------ html ------------>
+<body id="filmtn_body" onload="init1()">
+
+<h4><div id="name_version"></div></h4><br>
+
+<a href="#" onclick="chdir_upper()">▲</a>   
+Path:<input type="text" id="cur_path" value="" size="56" >
+<input type="button" name="button_dir" value=" dir " onclick="list_directory_button('','')"> 
+
+<div id="div_no1">div_no1</div>
+<br>
+<input type="button" name="button_new" value="NewFile" onclick="button_newfile()">
+<input type="button" name="button_new" value="Make Dir" onclick="button_mkdir()"> <br>
+upload:<input type="file" id="input_file_upload" onchange="file_readin()" >
+<input type="button" name="button_clr_up" value="clear upload" onclick="clear_upload_info()"><br>
+<p>
+status:<input type="text" id="status_win" value="" size="12" ><br>
+<br>
+<input type="button" name="button_exe" value="exec cmd" onclick="button_exec_cmd()">
+<div id="edit_area_op"></div>
+<div id="edit_area_ace" style="height: 400px"></div> 
+<TEXTAREA id="edit_area" cols="100" rows="10"></TEXTAREA>
+<br>
+
+
+<form id="debug_tool">
+<hr>
+param1=<input type="text" id="param1"  size="22" value="" ><br>
+<input type="button" name="button1" value="button1" onclick="button_1()"> 
+<input type="button" name="button2" value="button2" onclick="button_2()"> 
+<input type="button" name="button3" value="button3" onclick="button_3()"> 
+<br>
+<input type="button" name="button_dbg" value="CLEAR" onclick="clear_debug_button()"> <br>
+<TEXTAREA id="debug_out" cols="100" rows="10"></TEXTAREA> <br>
+</form>
+
+<hr>
+<div id="error_msg"></div><!-- DEBUG -->
+<hr>
+2023 (C) espi laboratory <br>
+
+</body>
+</html>

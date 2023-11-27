@@ -1,0 +1,19 @@
+/*
+   filmtn.css
+
+  cf.)https://saruwakakun.com/html-css/basic/table
+  
+*/
+table {
+  /*border-collapse: collapse;*/
+  
+  border-collapse: separate;
+  border-spacing: 3px;
+}
+table th {
+  border: solid 1px gray;
+}
+table td {
+  border: solid 1px white;
+  /*実線 1px 黒*/
+}
