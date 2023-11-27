@@ -160,13 +160,6 @@ fh_log = open(fname_log, 'a', encoding='utf-8')
 now_str = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
 sys_log('#### Log_start:' + now_str)
 
-
-############################ DEBUG
-#filelist = get_dir_entry('.', 'name','up')   # (path, sort_kind, sort_order) 
-#for item in filelist:
-#    (fname, size_str, size, mtime_str, mtime, permissions, file_path, is_dir, is_file, file_info) = item
-#    print(fname, ',', size_str, ',', mtime_str, ',', permissions, ',', file_path, ',', is_dir, ',', is_file, sep="")
-
 #exit(1) #DEBUG
 
 #cmd = 'dir'   #DEBUG
@@ -185,7 +178,6 @@ else:
   print('cmd not exist in form')
   cmd='dir'
 
-#cmd='dir'  #DEBUG
 path = '.'
 sys_log('temporary,path=' + path)
 
