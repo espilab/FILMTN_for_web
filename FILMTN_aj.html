@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.24";
+var NAME_VERSION = "FILTMN_web ver 0.26";
 var CGI_FNAME = "./py_cmd.cgi";
 
 // setting of ace editor 
@@ -107,8 +107,8 @@ function process_received_content(content){
     alert('Error occured! (' + ar[1] +')');
     return;
   }
-  if (ar[1] == 'dir'){  
-    show_dir(all_lines); 
+  if (ar[1] == 'dir'){
+     show_dir(all_lines);   
   }
   let cmds = ['del_file', 'rm_dir', 'make_dir', 'cre_file', 'save_text_file', 'copy_to', 'move_to', 'chmod_file'];
   if (cmds.includes(ar[1])){
@@ -553,7 +553,7 @@ function debug_println(str){    debug_print(str + "\n");  }
 
 function debug_print(str){
   document.getElementById("debug_out").textContent += str; 
-  //document.getElementById('error_msg').innerHTML = str; //DEBUG
+  if (DEBUG){ document.getElementById('error_msg').innerHTML = str + '<hr>'; } //DEBUG
 }
 
 function clear_debug_button(){
@@ -605,7 +605,7 @@ param1=<input type="text" id="param1"  size="22" value="" ><br>
 
 <hr>
 <div id="error_msg"></div><!-- DEBUG -->
-<hr>
+
 2023 (C) espi laboratory <br>
 
 </body>
