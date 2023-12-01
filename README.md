@@ -8,4 +8,7 @@ File maintenance program via browser
  - place the files: FILMTN_aj.html, py_cmd.cgi, filmtn,css on your managing server.
  - from browser, access to http://<your_placed_url>/FILMTN_aj.html
 
+
+![screen image](example-screen.png)
+
  2023-12-1 ver 0.27
