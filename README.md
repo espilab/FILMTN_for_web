@@ -6,8 +6,10 @@ File maintenance program via browser
 
 ## install
  - place the files: FILMTN_aj.html, py_cmd.cgi, filmtn,css on your managing server.
+ - about the py_cmd.cgi, set proper permittion, correct shebang line to call python.
  - from browser, access to http://<your_placed_url>/FILMTN_aj.html
 
+(screen example)
 
 ![screen image](image/example-screen.png)
 
