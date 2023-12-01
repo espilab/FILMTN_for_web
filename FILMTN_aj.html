@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.26";
+var NAME_VERSION = "FILTMN_web ver 0.27";
 var CGI_FNAME = "./py_cmd.cgi";
 
 // setting of ace editor 
@@ -154,10 +154,13 @@ function show_dir(dir_list){
   table_str += '</tr>';
   for (j = 1; j < dir_list.length - 1; j++){
     [fname, size_str, mtime_str, permissions, file_path, is_dir, is_file] = dir_list[j].split(",");
+    file_path_e = encodeURIComponent(file_path);
     a_row_str = '<tr>';
     if (is_file == 'True'){ a_row_str += '<td><a href="' + file_path + '">' + fname + '</a></td>'; }
-    else if (is_dir == 'True'){  a_row_str += '<td><a href="#" onclick=change_directory("' + fname + '/")>' + fname + '</a></td>'; }
-    else {  a_row_str += '<td>' + fname + '</td>';  }
+    else if (is_dir == 'True'){  
+      a_row_str += '<td><a href="#" onclick=change_directory("' + fname + '/")>' + fname + '</a></td>';
+      size_str = '<b>' + size_str + '</b>'; 
+    } else {  a_row_str += '<td>' + fname + '</td>';  }
     a_row_str += '<td>' + size_str + '</td>';
     a_row_str += '<td>' + mtime_str + '</td>';
     a_row_str += '<td>' + int2rwx(permissions) + '</td>';
@@ -165,7 +168,7 @@ function show_dir(dir_list){
     else { a_row_str += '<td> - </td>'; }
     if (is_file == 'True'){ a_row_str += '<td><a href="#" onclick=edit_file("' + file_path + '")>edit<a>' + '</td>';  }
       else { a_row_str += '<td> - </td>'; }    
-    if (is_file == 'True'){a_row_str += '<td><a href="#" onclick=delete_file("' + file_path + '")>delete<a>' + '</td>'; }   
+    if (is_file == 'True'){a_row_str += '<td><a href="#" onclick=delete_file("' + file_path_e + '")>delete<a>' + '</td>'; }   
     else if (is_dir == 'True'){ a_row_str += '<td><a href="#" onclick=rm_dir("' + file_path + '")>rmdir<a>' + '</td>'; }
     else {a_row_str += '<td>-</td>'; }   
     a_row_str += '<td><a href="#" onclick=move_file("' + file_path + '")> move <a>' + '</td>';  
@@ -225,7 +228,7 @@ function copy_to_file(from_fname){
 
 
 function delete_file(fname){
-  result = confirm("Delete: " + fname + " ?");
+  result = confirm("Delete: " + decodeURIComponent(fname) + " ?");
   if (result){
     py_req('del_file', fname, '');
   }

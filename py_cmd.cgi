@@ -260,7 +260,7 @@ if cmd == 'move_to':
 
 
 if cmd == 'del_file':
-  fname = param1
+  fname = '"' + urllib.parse.unquote(param1) + '"'
   cmd = 'rm -f ' + fname
   ret = subprocess.call(cmd, shell=True)
   if (ret != 0):
