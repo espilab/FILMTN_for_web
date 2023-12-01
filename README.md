@@ -1,6 +1,9 @@
 # FILMTN_for_web
 File maintenance program via browser
 
+## NOTICE
+ - This program is still buggy, caution to unexpected file deleting.
+ 
 ## environment for run this program
  - http server that can run python *.cgi script.
 
