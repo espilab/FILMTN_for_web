@@ -9,6 +9,6 @@ File maintenance program via browser
  - from browser, access to http://<your_placed_url>/FILMTN_aj.html
 
 
-![screen image](example-screen.png)
+![screen image](image/example-screen.png)
 
  2023-12-1 ver 0.27
