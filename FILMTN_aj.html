@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.27";
+var NAME_VERSION = "FILTMN_web ver 0.28";
 var CGI_FNAME = "./py_cmd.cgi";
 
 // setting of ace editor 
@@ -171,7 +171,7 @@ function show_dir(dir_list){
     if (is_file == 'True'){a_row_str += '<td><a href="#" onclick=delete_file("' + file_path_e + '")>delete<a>' + '</td>'; }   
     else if (is_dir == 'True'){ a_row_str += '<td><a href="#" onclick=rm_dir("' + file_path + '")>rmdir<a>' + '</td>'; }
     else {a_row_str += '<td>-</td>'; }   
-    a_row_str += '<td><a href="#" onclick=move_file("' + file_path + '")> move <a>' + '</td>';  
+    a_row_str += '<td><a href="#" onclick=move_file("' + file_path_e + '")> move <a>' + '</td>';  
     a_row_str += '<td><a href="#" onclick=chmod_file("' + file_path + '")>chmod<a>' + '</td>';    
     a_row_str += '<td><a href="' + file_path + '" download="' + fname + '">DL </A></td>';    
     //a_row_str += '<td>path=' + file_path + '</td>';
@@ -249,9 +249,10 @@ function chmod_file(fname){
 
 
 function move_file(from_fname){
-  to_fname = window.prompt("Enter to file/dir name; move to:", "");
-  to_fname = document.getElementById('cur_path').value + to_fname;
-  py_req('move_to', from_fname + ',' + to_fname, '');
+  let default_name = decodeURIComponent(from_fname);
+  to_fname = window.prompt("Enter to file/dir name; move to:", default_name);
+  //to_fname = document.getElementById('cur_path').value + to_fname;
+  py_req('move_to', from_fname, to_fname);     // from_fname is encoded text
 }
 
 

@@ -248,7 +248,8 @@ if cmd == 'copy_to':
   print('copy result=',ret)
 
 if cmd == 'move_to':
-  (from_fname, to_fname) = (form.getvalue('param1')).split(',')
+  from_fname = '"' + urllib.parse.unquote(param1) + '"' 
+  to_fname = param2
   cmd = 'mv ' + from_fname + ' ' + to_fname
   ret = subprocess.call(cmd, shell=True)
   if (ret != 0):
