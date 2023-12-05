@@ -4,6 +4,11 @@
   cf.)https://saruwakakun.com/html-css/basic/table
   
 */
+
+a {
+  text-decoration: none;
+}
+
 table {
   /*border-collapse: collapse;*/
   
@@ -17,3 +22,5 @@ table td {
   border: solid 1px white;
   /*実線 1px 黒*/
 }
+
+
