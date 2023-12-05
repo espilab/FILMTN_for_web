@@ -14,7 +14,7 @@ File maintenance program via browser
 
 (screen example)
 
-![screen image](image/example-screenpng)
+![screen image](image/example-screen.png)
 
  2023-12-1 ver 0.28   
  2023-12-5 ver 0.29
