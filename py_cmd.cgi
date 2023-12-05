@@ -1,6 +1,5 @@
 #!/usr/local/bin/python3
 
-
 import urllib.request
 import os
 import sys, io
@@ -11,6 +10,7 @@ import cgi
 import cgitb
 cgitb.enable()
 
+py_cmd_version = 'ver 0.1'
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -61,7 +61,7 @@ def get_dir_entry(path, kind, order):
       sizestr = '[DIR]'
     else:
       sizestr = info.st_size
-      permissions = info.st_mode & 0o777
+    permissions = info.st_mode & 0o777
     mtime = datetime.datetime.fromtimestamp(info.st_mtime)
     mtime_str = mtime.strftime("%Y-%m-%d %H:%M:%S")
     entry_list = [name, sizestr, info.st_size, mtime_str, mtime, permissions, file_path, isdir, isfile, info]
@@ -283,6 +283,11 @@ if cmd == 'get_file':
     content = f.read()
   print(fname)      # return (insert) the file name into 2nd line 
   print(content, end="", sep="")
+
+
+if cmd == 'get_ver':
+  print(py_cmd_version)   # return version
+  sys_log('version =' + py_cmd_version) 
 
 
 # ------- save text file

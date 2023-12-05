@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.28";
+var NAME_VERSION = "FILTMN_web ver 0.29";
 var CGI_FNAME = "./py_cmd.cgi";
 
 // setting of ace editor 
@@ -51,10 +51,12 @@ function init1(){
     document.getElementById('cur_path').value = './';
     document.getElementById('name_version').innerText = NAME_VERSION;
     document.title = NAME_VERSION;
+    document.getElementById('version').innerHTML = NAME_VERSION;
 
     document.getElementById('edit_area').style.display = 'none';
     document.getElementById('edit_area_ace').style.display = 'none';
     list_directory('','');
+    get_py_ver('get');
 }
 
 
@@ -96,7 +98,7 @@ function process_received_content(content){
   if (DEBUG) debug_println("last char=#"+content[content.length - 1]+"#");  //DEBUG
 
   let all_lines = [];
-  if (DEBUG)  debug_println("current content="+content+"//END"); //DEBUG
+  if (DEBUG)  debug_println("\nReceived content="+content+"//END"); //DEBUG
   all_lines = content.split("\n");
   if (DEBUG){
     for (j = 0; j < (all_lines.length); j++){ debug_println('['+j+']='+all_lines[j]);}  //DEBUG 
@@ -137,6 +139,10 @@ function process_received_content(content){
     ///}  
     if (DEBUG) debug_println('The response includes get_file result, text_content=('+text_content+")///");
     open_edit_area_ace(fname, text_content); 
+  }
+
+  if (ar[1] == 'get_ver'){
+    get_py_ver('show', all_lines[1]);
   }
 }
 
@@ -473,6 +479,18 @@ function getParentDirectory(path) {
 }
 
 
+//  get version of py_cmd.cgi script 
+//    mode: 'get'  -> get_ver request, 
+//          'show' -> ver_str is version of py_cmd.cgi, show it
+function get_py_ver(mode, ver_str){
+  if (mode == 'get')  py_req('get_ver', '', '');
+  if (mode == 'show'){
+    document.getElementById('version').innerHTML += ' (py_cmd.cgi:' + ver_str + ')';
+  }
+}
+
+
+
 function button_1(){
     debug_println('dir');
     py_req('dir','', '');
@@ -609,7 +627,7 @@ param1=<input type="text" id="param1"  size="22" value="" ><br>
 
 <hr>
 <div id="error_msg"></div><!-- DEBUG -->
-
+<div id="version">(ver)</div> 
 2023 (C) espi laboratory <br>
 
 </body>
