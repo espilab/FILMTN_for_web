@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #!/usr/local/bin/python3
 
 import urllib.request
@@ -10,7 +11,7 @@ import cgi
 import cgitb
 cgitb.enable()
 
-py_cmd_version = 'ver 0.1'
+py_cmd_version = 'ver 0.11'
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
@@ -277,7 +278,7 @@ if cmd == 'chmod_file':
   sys_log('chmod, cmd=' + cmd + ' ret=' + str(ret) )
   print('chmod result=',ret)
 
-if cmd == 'get_file':
+if (cmd == 'get_file') or (cmd == 'get_guide_file') :
   fname = param1
   with open(fname, 'r', encoding='utf-8') as f:
     content = f.read()

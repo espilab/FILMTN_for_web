@@ -15,7 +15,8 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.29";
+var NAME_VERSION = "FILTMN_web ver 0.30";
+var INDEX_GUIDE_FNAME = "index_guide.html";
 var CGI_FNAME = "./py_cmd.cgi";
 
 // setting of ace editor 
@@ -141,6 +142,22 @@ function process_received_content(content){
     open_edit_area_ace(fname, text_content); 
   }
 
+  // get index_guide file
+  if (ar[1] == 'get_guide_file'){
+    if (DEBUG) debug_println('GET GUIDE FILE is done, returned, content=('+content+")///");
+    let fname = all_lines[1];  // file name in 2nd line
+    let cnt = 0;
+    for (p=0; p<content.length; p++){
+      if (content.codePointAt(p) == 0x0a){ cnt++;}
+      if (cnt >= 2){
+        text_content = content.slice(p + 1);
+        break;
+      }
+    }
+    show_guide_file(text_content); 
+  }
+
+
   if (ar[1] == 'get_ver'){
     get_py_ver('show', all_lines[1]);
   }
@@ -151,7 +168,8 @@ function process_received_content(content){
 // show dir
 function show_dir(dir_list){
   let table_str = '<table border="1">';
-  
+  let index_guide_exists = false;
+
   table_str += '<tr>';
   table_str += '<th> name <a href="#" onclick=list_directory("name","up")> ↑ </a> <a href="#" onclick=list_directory("name","down")> ↓ </a></th>';
   table_str += '<th> size <a href="#" onclick=list_directory("size","up")> ↑ </a> <a href="#" onclick=list_directory("size","down")> ↓ </a></th>';
@@ -185,13 +203,17 @@ function show_dir(dir_list){
     a_row_str += '</tr>\n';
     
     table_str += a_row_str;
+    if (fname == INDEX_GUIDE_FNAME){ 
+      index_guide_exists = true; 
+      debug_println("\n INDEX_GUIDE_FNAME exists!");
+    }
   }
   table_str += '</table>';
   if (DEBUG) debug_println(table_str);
   document.getElementById('div_no1').innerHTML = table_str;
 
+  if (index_guide_exists){ get_guide_file(); } else show_guide_file('');
 }
-
 
 
 function list_directory(kind,order){
@@ -201,6 +223,18 @@ function list_directory(kind,order){
     debug_println('dir '+cur_path+' '+kind + '=' + order);
     py_req('dir', cur_path, list_dir_sort_kind + '=' + list_dir_sort_order);
     //py_req('dir', '', kind+'='+order);
+}
+
+
+function get_guide_file(){
+  fname = document.getElementById('cur_path').value + INDEX_GUIDE_FNAME;
+  if (DEBUG){ debug_print('get index_guide, fname=' + fname); }
+  py_req('get_guide_file', fname, '');
+}
+
+function show_guide_file(content){
+  if (DEBUG){ debug_print('show index_guide'); }
+  document.getElementById('index_guide').innerHTML = content;
 }
 
 
@@ -592,7 +626,8 @@ function show_status(str){
 <!------------ html ------------>
 <body id="filmtn_body" onload="init1()">
 
-<h4><div id="name_version"></div></h4><br>
+<h5><div id="name_version"></div></h5>
+<div id="index_guide"></div><br>
 
 <a href="#" onclick="chdir_upper()">▲</a>   
 Path:<input type="text" id="cur_path" value="" size="56" >
