@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.31";
+var NAME_VERSION = "FILTMN_web ver 0.32";
 var INDEX_GUIDE_FNAME = "index_guide.html";
 var CGI_FNAME = "./py_cmd.cgi";
 
@@ -49,13 +49,36 @@ function init1(){
       document.getElementById("filmtn_body").style.backgroundColor = "#FCE8FC";
     }
 
-    document.getElementById('cur_path').value = './';
+    //
     document.getElementById('name_version').innerText = NAME_VERSION;
     document.title = NAME_VERSION;
     document.getElementById('version').innerHTML = NAME_VERSION;
 
     document.getElementById('edit_area').style.display = 'none';
     document.getElementById('edit_area_ace').style.display = 'none';
+
+    // check cookie
+    let ar = [];
+    let key, val='';
+    cookie_str = document.cookie;
+    if (DEBUG){ debug_println('cookie='+cookie_str); }
+    if (cookie_str.indexOf('cur_dir=') >= 0){
+      ar = cookie_str.split(';');
+      for (var j=0; j<ar.length; j++){
+        item=ar[j].trim();
+        debug_println('cookie['+j+']='+item);
+        if (item.indexOf('cur_dir=') == 0){
+          [key, val] = item.split('=');
+          document.getElementById('cur_path').value = val;
+          if (DEBUG){ debug_println('cur_dir recoverd from cookie; key:val='+key+':'+val); }
+        }
+      }
+      document.getElementById('cur_path').value = val;
+    }
+    else {
+      document.getElementById('cur_path').value = './';
+    }
+
     list_directory('','');
     get_py_ver('get');
 }
@@ -213,11 +236,14 @@ function show_dir(dir_list){
   document.getElementById('div_no1').innerHTML = table_str;
 
   if (index_guide_exists){ get_guide_file(); } else show_guide_file('');
+  cur_path = document.getElementById('cur_path').value;
+  document.cookie = 'cur_dir=' + cur_path;
 }
 
 
 function list_directory(kind,order){
     cur_path = document.getElementById('cur_path').value;
+    //document.cookie = 'cur_dir=' + cur_path;
     if (kind != ''){   list_dir_sort_kind = kind;  }
     if (order != ''){  list_dir_sort_order = order;  }
     debug_println('dir '+cur_path+' '+kind + '=' + order);
@@ -529,6 +555,13 @@ function button_1(){
     debug_println('dir');
     py_req('dir','', '');
 }
+
+function button_3(){
+    debug_println('cookie=' + document.cookie);
+    
+}
+
+
 
 // make a new file
 function button_newfile(){

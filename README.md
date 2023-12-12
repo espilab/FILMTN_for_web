@@ -23,3 +23,4 @@ File maintenance program via browser
  2023-12-5 ver 0.29   
  2023-12-7 ver 0.30   
  2023-12-11 ver 0.31   
+ 2023-12-12 ver 0.32   
