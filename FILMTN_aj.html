@@ -15,7 +15,7 @@
 
 // global var.
 var DEBUG = false;
-var NAME_VERSION = "FILTMN_web ver 0.32";
+var NAME_VERSION = "FILTMN_web ver 0.33";
 var INDEX_GUIDE_FNAME = "index_guide.html";
 var CGI_FNAME = "./py_cmd.cgi";
 
@@ -338,7 +338,7 @@ function open_edit_area(fname, content){
   //str += '<hr>';
   //str += content;  //DEBUG
   str_op = '<input type="text" id="fname" value="' + fname + '"> ';
-  //str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_file()">';
+  str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_text_file(1)">';
   str_op += '<input type="button" name="button_save" value="Close" onclick="close_editor()">';
   str_op += '_';
   str_op += '<input type="button" name="button_switch" value="to Ace editor" onclick="switch_editor(2)">';
@@ -352,7 +352,7 @@ function open_edit_area(fname, content){
 function open_edit_area_ace(fname, content){
   let str_op = '';
   str_op += '<input type="text" id="fname" value="' + fname + '"> ';
-  str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_text_file()">';
+  str_op += '<input type="button" name="button_save" value="SAVE" onclick="save_text_file(2)">';
   str_op += '<input type="button" name="button_close" value="Close" onclick="close_editor()">';
   str_op += '_';
   str_op +=  '<input type="text" id="ace_jmpnum" value="" size="5" ><input type="button" name="button_jmp" value="Jump#" onclick="ace_jump()">';
@@ -418,10 +418,14 @@ function switch_editor(flag){
 
 
 // save the edited text file 
-function save_text_file(){
+function save_text_file(flag){
   fname = document.getElementById('fname').value;
   debug_print('save, fname='+fname); //DEBUG
-  content = editor.getValue();
+  if (flag == 2){
+    content = editor.getValue();
+  } else {
+    content = document.getElementById('edit_area').value;
+  }
   if (DEBUG) dump_hex(content); //DEBUG
   content_enc = encodeURIComponent(content);
   //content_enc = btoa(content);
